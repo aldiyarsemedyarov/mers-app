@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui';
+import { SankeyDiagram } from '@/components/viz/SankeyDiagram';
 
 export default function CashFlowPage() {
   const [period, setPeriod] = useState(30);
@@ -10,6 +11,8 @@ export default function CashFlowPage() {
     revenue: 72800,
     adSpend: 25480,
     cogs: 21840,
+    shipping: 6552,
+    fees: 2548,
     netProfit: 8072,
   };
 
@@ -40,6 +43,11 @@ export default function CashFlowPage() {
         <SummaryCard label="Ad Spend" value={summary.adSpend} color="var(--blue)" />
         <SummaryCard label="COGS" value={summary.cogs} color="var(--orange)" />
         <SummaryCard label="Net Profit" value={summary.netProfit} color="var(--accent)" />
+      </div>
+
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>Cash Flow Diagram</h3>
+        <SankeyDiagram data={summary} />
       </div>
 
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px', marginBottom: '16px' }}>
