@@ -18,6 +18,19 @@ export function getMetaAdAccountId() {
   return raw.startsWith("act_") ? raw : `act_${raw}`;
 }
 
+export class MetaAPIError extends Error {
+  constructor(
+    public status: number,
+    public statusText: string,
+    message: string,
+    public code?: number,
+    public type?: string
+  ) {
+    super(message);
+    this.name = "MetaAPIError";
+  }
+}
+
 export async function metaFetch<T = Json>(path: string, params?: Record<string, string>) {
   const token = getMetaAccessToken();
   const url = new URL(`https://graph.facebook.com/${META_API_VERSION}${path}`);
@@ -26,7 +39,37 @@ export async function metaFetch<T = Json>(path: string, params?: Record<string, 
 
   const res = await fetch(url.toString(), { cache: "no-store" });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Meta Graph error ${res.status}: ${text.slice(0, 500)}`);
+  
+  if (!res.ok) {
+    // Parse Meta error response
+    let errorMessage = `Meta API error ${res.status}`;
+    let errorCode: number | undefined;
+    let errorType: string | undefined;
+
+    try {
+      const errorData = JSON.parse(text);
+      if (errorData.error) {
+        errorCode = errorData.error.code;
+        errorType = errorData.error.type;
+        errorMessage = errorData.error.message || errorMessage;
+      }
+    } catch {
+      // If parsing fails, include raw text
+      errorMessage += `: ${text.slice(0, 500)}`;
+    }
+
+    // Categorize common errors
+    if (res.status === 401 || errorCode === 190) {
+      errorMessage = "Meta authentication failed. Token may be invalid or expired.";
+    } else if (errorCode === 4 || errorCode === 17 || errorCode === 32) {
+      errorMessage = `Meta rate limit exceeded: ${errorMessage}`;
+    } else if (res.status >= 500) {
+      errorMessage = "Meta server error. Please try again later.";
+    }
+
+    throw new MetaAPIError(res.status, res.statusText, errorMessage, errorCode, errorType);
+  }
+
   return JSON.parse(text) as T;
 }
 
