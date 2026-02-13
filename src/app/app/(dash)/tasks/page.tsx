@@ -53,7 +53,10 @@ export default function TasksPage() {
     // Fetch tasks from API
     fetch('/api/tasks')
       .then((res) => res.json())
-      .then((data) => setTasks(data.tasks || mockTasks))
+      .then((data) => {
+        const apiTasks = Array.isArray(data.tasks) ? data.tasks : null;
+        setTasks(apiTasks && apiTasks.length > 0 ? apiTasks : mockTasks);
+      })
       .catch(() => setTasks(mockTasks));
   }, []);
 
