@@ -167,3 +167,89 @@ model DailyMetric {
   @@index([storeId])
   @@index([date])
 }
+
+model Task {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  priority    String   // "high", "med", "low"
+  owner       String   // "mers", "user"
+  column      String   // "suggested", "backlog", "progress", "done"
+  impact      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([column])
+}
+
+model KnowledgeTactic {
+  id          String   @id @default(cuid())
+  tactic      String
+  detail      String
+  category    String   // "ads", "creative", "store", "sourcing", "fulfillment", "email"
+  rule        String
+  sources     Json     // Array of source names
+  confidence  Int      // 0-100
+  status      String   // "verified", "conflict", "suggested"
+  isConflict  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([status])
+}
+
+model Playbook {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String
+  tree        Json     // Decision tree structure
+  sources     Int
+  decisions   Int
+  kills       Int
+  conflicts   Int
+  active      Int
+  nodes       Json     // Array of node labels
+  createdAt   DateTime @default(now())
+}
+
+model Competitor {
+  id          String          @id @default(cuid())
+  userId      String
+  name        String
+  url         String
+  category    String?
+  lastChecked DateTime?
+  createdAt   DateTime        @default(now())
+  ads         CompetitorAd[]
+
+  @@index([userId])
+}
+
+model CompetitorAd {
+  id           String     @id @default(cuid())
+  competitorId String
+  imageUrl     String
+  hook         String?
+  cta          String?
+  platform     String     // "meta", "tiktok"
+  scrapedAt    DateTime   @default(now())
+  competitor   Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@index([competitorId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "agent", "system", "milestone"
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+}
