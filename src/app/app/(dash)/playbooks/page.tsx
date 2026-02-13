@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui';
 
+// Full playbooks from YC demo (6 playbooks)
 const mockPlaybooks = [
   {
     icon: '🎯',
@@ -17,7 +18,7 @@ const mockPlaybooks = [
   {
     icon: '📱',
     title: 'TikTok Ads: Launch Playbook',
-    description: 'Native content strategy, Spark Ads setup, audience targeting, scaling triggers specific to TikTok\'s algorithm.',
+    description: "Native content strategy, Spark Ads setup, audience targeting, scaling triggers specific to TikTok's algorithm.",
     sources: 5,
     decisions: 8,
     kills: 4,
@@ -34,6 +35,39 @@ const mockPlaybooks = [
     kills: 3,
     conflicts: 1,
     nodes: ['Hero section', 'Trust signals', 'Urgency', 'Checkout', 'Post-purchase'],
+    active: 3,
+  },
+  {
+    icon: '📦',
+    title: 'Product Sourcing Pipeline',
+    description: 'Trend detection → supplier lock-in. Winning Hunter workflow, sample protocol, margin calculator.',
+    sources: 5,
+    decisions: 8,
+    kills: 4,
+    conflicts: 0,
+    nodes: ['Trend scan', 'Validate demand', 'Sample & test', 'Supplier lock', 'Launch'],
+    active: 1,
+  },
+  {
+    icon: '📧',
+    title: 'Email/SMS Revenue Engine',
+    description: 'Klaviyo flows: welcome, abandoned cart, post-purchase, winback. SMS for flash sales. Target 25-30% from owned channels.',
+    sources: 4,
+    decisions: 6,
+    kills: 2,
+    conflicts: 0,
+    nodes: ['Welcome flow', 'Cart abandon', 'Post-purchase', 'Winback', 'VIP segment'],
+    active: 1,
+  },
+  {
+    icon: '💰',
+    title: 'Unit Economics Dashboard',
+    description: 'Real-time P&L per product. COGS, shipping, ads, fees, returns. Auto-alert when margin drops below threshold.',
+    sources: 3,
+    decisions: 4,
+    kills: 2,
+    conflicts: 0,
+    nodes: ['Revenue', 'COGS', 'Ad spend', 'Fees', 'Net margin'],
     active: 3,
   },
 ];
