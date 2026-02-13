@@ -74,49 +74,46 @@ const recentActivity = [
 ];
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData>({
+    todayPerformance: {
+      revenue: 2614,
+      revenueChange: 12,
+      orders: 68,
+      ordersChange: 8,
+      roas: 3.08,
+      roasChange: 0.12,
+      netProfit: 468,
+      netProfitChange: 18,
+    },
+    monthlyGoals: {
+      revenue: { current: 72800, target: 85000 },
+      netMargin: { current: 11.1, target: 15 },
+      roas: { current: 2.56, target: 3.0 },
+      emailRevenue: { current: 8, target: 25 },
+      tasksCompleted: { current: 11, target: 18 },
+    },
+    topProduct: {
+      name: 'Compression Leggings — Black',
+      sellPrice: 39.0,
+      cogs: 8.4,
+      shipping: 3.2,
+      adCost: 12.8,
+      processing: 1.37,
+      margin: 13.23,
+      marginPercent: 33.9,
+    },
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch real data from API
+    // Fetch real data from API in background
     fetch('/api/dashboard/summary')
       .then((res) => res.json())
       .then((json) => {
         setData(json);
-        setLoading(false);
       })
       .catch(() => {
-        // Use mock data on error
-        setData({
-          todayPerformance: {
-            revenue: 2614,
-            revenueChange: 12,
-            orders: 68,
-            ordersChange: 8,
-            roas: 3.08,
-            roasChange: 0.12,
-            netProfit: 468,
-            netProfitChange: 18,
-          },
-          monthlyGoals: {
-            revenue: { current: 72800, target: 85000 },
-            netMargin: { current: 11.1, target: 15 },
-            roas: { current: 2.56, target: 3.0 },
-            emailRevenue: { current: 8, target: 25 },
-            tasksCompleted: { current: 11, target: 18 },
-          },
-          topProduct: {
-            name: 'Compression Leggings — Black',
-            sellPrice: 39.0,
-            cogs: 8.4,
-            shipping: 3.2,
-            adCost: 12.8,
-            processing: 1.37,
-            margin: 13.23,
-            marginPercent: 33.9,
-          },
-        });
-        setLoading(false);
+        // Already have mock data
       });
   }, []);
 
@@ -126,16 +123,6 @@ export default function DashboardPage() {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
-        <div className="skeleton" style={{ width: '200px', height: '200px', borderRadius: '50%' }}></div>
-      </div>
-    );
-  }
-
-  if (!data) return null;
 
   const { todayPerformance, monthlyGoals, topProduct } = data;
 
