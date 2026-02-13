@@ -4,27 +4,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui';
 
 const trendingProducts = [
-  {
-    name: 'Neck & Jaw Exerciser',
-    searchVolume: '+340%',
-    margin: '8x',
-    competition: 'Low',
-    status: 'Hot',
-  },
-  {
-    name: 'LED Face Mask',
-    searchVolume: '+180%',
-    margin: '6x',
-    competition: 'Medium',
-    status: 'Rising',
-  },
-  {
-    name: 'Posture Corrector',
-    searchVolume: '+120%',
-    margin: '7x',
-    competition: 'High',
-    status: 'Saturated',
-  },
+  {name:'Neck & Jaw Exerciser',searchVolume:'+340%',margin:'8x',competition:'Low',status:'Hot'},
+  {name:'LED Face Mask',searchVolume:'+180%',margin:'6x',competition:'Medium',status:'Rising'},
+  {name:'Posture Corrector',searchVolume:'+120%',margin:'7x',competition:'High',status:'Saturated'},
+  {name:'Compression Recovery Boots',searchVolume:'+215%',margin:'5.5x',competition:'Medium',status:'Hot'},
+  {name:'Smart Hula Hoop',searchVolume:'+165%',margin:'7x',competition:'Low',status:'Rising'},
+  {name:'Acupressure Mat Set',searchVolume:'+95%',margin:'6x',competition:'High',status:'Stable'},
+  {name:'Foot Massager',searchVolume:'+280%',margin:'5x',competition:'High',status:'Hot'},
+  {name:'Scalp Massager',searchVolume:'+145%',margin:'9x',competition:'Low',status:'Rising'},
+  {name:'Ice Roller for Face',searchVolume:'+190%',margin:'7.5x',competition:'Medium',status:'Hot'},
 ];
 
 export default function ResearchPage() {

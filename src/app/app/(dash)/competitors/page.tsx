@@ -3,26 +3,12 @@
 import { Button } from '@/components/ui';
 
 const mockCompetitors = [
-  {
-    name: 'SlimWear.co',
-    url: 'https://slimwear.co',
-    category: 'Activewear',
-    price: 29,
-    priceChange: -10,
-    rating: 4.6,
-    reviews: 2834,
-    lastChecked: '2h ago',
-  },
-  {
-    name: 'FitComfort',
-    url: 'https://fitcomfort.com',
-    category: 'Activewear',
-    price: 42,
-    priceChange: 0,
-    rating: 4.8,
-    reviews: 1592,
-    lastChecked: '5h ago',
-  },
+  {name:'SlimWear.co',url:'https://slimwear.co',category:'Activewear',price:29,priceChange:-10,rating:4.6,reviews:2834,lastChecked:'2h ago'},
+  {name:'FitComfort',url:'https://fitcomfort.com',category:'Activewear',price:42,priceChange:0,rating:4.8,reviews:1592,lastChecked:'5h ago'},
+  {name:'ShapeActive',url:'https://shapeactive.com',category:'Compression wear',price:36,priceChange:3,rating:4.5,reviews:892,lastChecked:'3h ago'},
+  {name:'FlexFit Pro',url:'https://flexfitpro.com',category:'Activewear',price:44,priceChange:-5,rating:4.7,reviews:3241,lastChecked:'1h ago'},
+  {name:'CoreCompress',url:'https://corecompress.com',category:'Compression wear',price:38,priceChange:0,rating:4.4,reviews:1456,lastChecked:'6h ago'},
+  {name:'ActiveShape',url:'https://activeshape.co',category:'Activewear',price:32,priceChange:2,rating:4.6,reviews:2103,lastChecked:'4h ago'},
 ];
 
 export default function CompetitorsPage() {
