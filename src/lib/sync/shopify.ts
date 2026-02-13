@@ -45,20 +45,27 @@ export async function syncShopifyOrders(storeId: string, storeConfig?: StoreConf
   });
 
   try {
-    let page = 1;
-    let hasMore = true;
     let totalOrders = 0;
+    let sinceId: string | null = null;
+    let pageCount = 0;
+    const maxPages = 10; // Limit to 10 pages for MVP
 
-    while (hasMore && page <= 10) {
-      // Limit to 10 pages for MVP
+    while (pageCount < maxPages) {
+      const url = sinceId
+        ? `/orders.json?status=any&limit=250&since_id=${sinceId}`
+        : `/orders.json?status=any&limit=250`;
+
       const response = await shopifyAdminFetch<{ orders: ShopifyOrder[] }>(
-        `/orders.json?status=any&limit=250&page=${page}`,
+        url,
         undefined,
         storeConfig
       );
 
       const orders = response.orders;
-      hasMore = orders.length === 250;
+      if (orders.length === 0) break;
+
+      // Get the last order ID for next page
+      sinceId = String(orders[orders.length - 1].id);
 
       for (const order of orders) {
         await prisma.order.upsert({
@@ -91,7 +98,8 @@ export async function syncShopifyOrders(storeId: string, storeConfig?: StoreConf
         totalOrders++;
       }
 
-      page++;
+      pageCount++;
+      if (orders.length < 250) break; // Last page
     }
 
     await prisma.syncRun.update({
@@ -127,20 +135,27 @@ export async function syncShopifyProducts(storeId: string, storeConfig?: StoreCo
   });
 
   try {
-    let page = 1;
-    let hasMore = true;
     let totalProducts = 0;
+    let sinceId: string | null = null;
+    let pageCount = 0;
+    const maxPages = 10; // Limit to 10 pages for MVP
 
-    while (hasMore && page <= 10) {
-      // Limit to 10 pages for MVP
+    while (pageCount < maxPages) {
+      const url = sinceId
+        ? `/products.json?limit=250&since_id=${sinceId}`
+        : `/products.json?limit=250`;
+
       const response = await shopifyAdminFetch<{ products: ShopifyProduct[] }>(
-        `/products.json?limit=250&page=${page}`,
+        url,
         undefined,
         storeConfig
       );
 
       const products = response.products;
-      hasMore = products.length === 250;
+      if (products.length === 0) break;
+
+      // Get the last product ID for next page
+      sinceId = String(products[products.length - 1].id);
 
       for (const product of products) {
         await prisma.product.upsert({
@@ -169,7 +184,8 @@ export async function syncShopifyProducts(storeId: string, storeConfig?: StoreCo
         totalProducts++;
       }
 
-      page++;
+      pageCount++;
+      if (products.length < 250) break; // Last page
     }
 
     await prisma.syncRun.update({
