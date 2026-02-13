@@ -13,7 +13,7 @@ export function getShopifyAdminBaseUrl() {
 
 export async function shopifyAdminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getShopifyAdminBaseUrl();
-  const token = requiredEnv("SHOPIFY_ADMIN_TOKEN");
+  const token = requiredEnv("SHOPIFY_ACCESS_TOKEN");
 
   const res = await fetch(`${base}${path}`, {
     ...init,
