@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stores    Store[]
+}
+
+model Store {
+  id                String         @id @default(cuid())
+  userId            String
+  name              String
+  slug              String         @unique
+  shopifyDomain     String
+  shopifyToken      String
+  currency          String         @default("USD")
+  timezone          String         @default("UTC")
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  integrations      Integration[]
+  orders            Order[]
+  products          Product[]
+  syncRuns          SyncRun[]
+  adAccounts        AdAccount[]
+  dailyMetrics      DailyMetric[]
+
+  @@index([userId])
+  @@index([slug])
+}
+
+model Integration {
+  id           String   @id @default(cuid())
+  storeId      String
+  provider     String   // "shopify", "meta", "tiktok", "google_analytics"
+  status       String   @default("active") // "active", "error", "disconnected"
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  metadata     Json?    // Provider-specific data
+  lastSyncAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, provider])
+  @@index([storeId])
+}
+
+model SyncRun {
+  id          String   @id @default(cuid())
+  storeId     String
+  syncType    String   // "orders", "products", "customers", "ad_insights"
+  status      String   // "running", "completed", "failed"
+  recordCount Int      @default(0)
+  errorMsg    String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([startedAt])
+}
+
+model Order {
+  id                String   @id // Shopify order ID
+  storeId           String
+  orderNumber       String
+  email             String?
+  financialStatus   String   // "paid", "pending", "refunded", etc.
+  fulfillmentStatus String?  // "fulfilled", "partial", null
+  totalPrice        Decimal  @db.Decimal(10, 2)
+  subtotalPrice     Decimal  @db.Decimal(10, 2)
+  totalTax          Decimal  @db.Decimal(10, 2)
+  totalDiscounts    Decimal  @db.Decimal(10, 2)
+  currency          String
+  createdAt         DateTime
+  updatedAt         DateTime
+  cancelledAt       DateTime?
+  lineItems         Json?    // Array of line items
+  shippingAddress   Json?
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([createdAt])
+  @@index([financialStatus])
+}
+
+model Product {
+  id             String   @id // Shopify product ID
+  storeId        String
+  title          String
+  handle         String
+  vendor         String?
+  productType    String?
+  status         String   // "active", "archived", "draft"
+  variants       Json?    // Array of variants
+  images         Json?    // Array of images
+  createdAt      DateTime
+  updatedAt      DateTime
+  publishedAt    DateTime?
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([status])
+}
+
+model AdAccount {
+  id          String     @id // Meta ad account ID (e.g., "act_123")
+  storeId     String
+  provider    String     // "meta", "tiktok", "google"
+  name        String
+  currency    String
+  status      String     @default("active")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  store       Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  campaigns   Campaign[]
+
+  @@unique([storeId, provider, id])
+  @@index([storeId])
+}
+
+model Campaign {
+  id          String   @id // Provider campaign ID
+  adAccountId String
+  name        String
+  status      String   // "active", "paused", "deleted"
+  objective   String?
+  createdAt   DateTime
+  updatedAt   DateTime
+  adAccount   AdAccount @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+
+  @@index([adAccountId])
+}
+
+model DailyMetric {
+  id          String   @id @default(cuid())
+  storeId     String
+  date        DateTime @db.Date
+  source      String   // "shopify", "meta", "tiktok"
+  revenue     Decimal? @db.Decimal(10, 2)
+  orders      Int?
+  spend       Decimal? @db.Decimal(10, 2)
+  impressions Int?
+  clicks      Int?
+  conversions Int?
+  roas        Decimal? @db.Decimal(10, 4)
+  metadata    Json?    // Extra provider-specific metrics
+  createdAt   DateTime @default(now())
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date, source])
+  @@index([storeId])
+  @@index([date])
+}
