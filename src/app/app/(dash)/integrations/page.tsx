@@ -1,56 +1,60 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
-type ShopifyShop = {
-  id: number;
-  name: string;
-  domain: string;
-  email?: string;
-  currency: string;
-  timezone: string;
-  myshopify_domain: string;
+type Integration = {
+  provider: string;
+  status: string;
+  lastSync: string | null;
+  metadata?: any;
 };
 
-type MetaAccount = {
-  id: string;
-  name: string;
-  currency: string;
+type IntegrationsData = {
+  store: {
+    name: string;
+    shopifyDomain: string;
+  };
+  integrations: Integration[];
 };
 
 export default function IntegrationsPage() {
-  const [shopify, setShopify] = useState<ShopifyShop | null>(null);
-  const [meta, setMeta] = useState<MetaAccount | null>(null);
+  const [data, setData] = useState<IntegrationsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<{ shopify?: string; meta?: string }>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/shopify/shop")
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.ok) setShopify(d.data.shop);
-          else setErrors((e) => ({ ...e, shopify: d.error }));
-        })
-        .catch(() => setErrors((e) => ({ ...e, shopify: "Network error" }))),
-
-      fetch("/api/meta/account")
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.ok) setMeta(d.data);
-          else setErrors((e) => ({ ...e, meta: d.error }));
-        })
-        .catch(() => setErrors((e) => ({ ...e, meta: "Network error" }))),
-    ]).finally(() => setLoading(false));
+    fetch("/api/integrations")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) setData(d.data);
+        else setError(d.error);
+      })
+      .catch(() => setError("Network error"))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-zinc-900/50 p-6 ring-1 ring-white/10">
-        <div className="text-sm text-zinc-400">Loading integrations...</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl bg-zinc-900/50 p-6 ring-1 ring-white/10">
+        <div className="text-sm text-red-400">{error}</div>
+        <div className="mt-2 text-xs text-zinc-500">
+          Tip: Run initialization first at <a href="/" className="underline">home page</a>
+        </div>
+      </div>
+    );
+  }
+
+  const shopifyIntegration = data?.integrations.find((i) => i.provider === "shopify");
+  const metaIntegration = data?.integrations.find((i) => i.provider === "meta");
 
   return (
     <div className="space-y-6">
@@ -60,7 +64,7 @@ export default function IntegrationsPage() {
           Connected Accounts
         </h1>
         <p className="mt-2 text-sm text-zinc-300">
-          Shopify + Meta Ads integrations for Slim&Fit
+          Shopify + Meta Ads integrations for {data?.store.name}
         </p>
       </div>
 
@@ -74,7 +78,7 @@ export default function IntegrationsPage() {
                 E-commerce platform
               </div>
             </div>
-            {shopify ? (
+            {shopifyIntegration && shopifyIntegration.status === "active" ? (
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500/20 text-green-400">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -97,32 +101,35 @@ export default function IntegrationsPage() {
             )}
           </div>
 
-          {shopify ? (
+          {shopifyIntegration && shopifyIntegration.status === "active" ? (
             <div className="mt-4 space-y-2">
               <div>
                 <div className="text-xs text-zinc-500">Store</div>
                 <div className="text-sm font-medium text-white">
-                  {shopify.name}
+                  {data?.store.name}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Domain</div>
-                <div className="text-sm text-zinc-300">{shopify.domain}</div>
+                <div className="text-xs text-zinc-500">Shopify Domain</div>
+                <div className="text-sm text-zinc-300">{data?.store.shopifyDomain}</div>
               </div>
-              <div>
-                <div className="text-xs text-zinc-500">Myshopify Domain</div>
-                <div className="text-sm text-zinc-300">
-                  {shopify.myshopify_domain}
+              {shopifyIntegration.lastSync && (
+                <div>
+                  <div className="text-xs text-zinc-500">Last Synced</div>
+                  <div className="text-sm text-zinc-300">
+                    {new Date(shopifyIntegration.lastSync).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500">Currency</div>
-                <div className="text-sm text-zinc-300">{shopify.currency}</div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="mt-4 text-sm text-red-400">
-              {errors.shopify || "Connection failed"}
+              {shopifyIntegration?.status === "error" ? "Connection error" : "Not connected"}
             </div>
           )}
         </div>
@@ -136,7 +143,7 @@ export default function IntegrationsPage() {
                 Facebook & Instagram advertising
               </div>
             </div>
-            {meta ? (
+            {metaIntegration && metaIntegration.status === "active" ? (
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500/20 text-green-400">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -159,24 +166,37 @@ export default function IntegrationsPage() {
             )}
           </div>
 
-          {meta ? (
+          {metaIntegration && metaIntegration.status === "active" ? (
             <div className="mt-4 space-y-2">
               <div>
                 <div className="text-xs text-zinc-500">Ad Account</div>
-                <div className="text-sm font-medium text-white">{meta.name}</div>
+                <div className="text-sm font-medium text-white">
+                  {metaIntegration.metadata?.accountName || "Meta Ads"}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Account ID</div>
-                <div className="text-sm text-zinc-300">{meta.id}</div>
+                <div className="text-sm text-zinc-300">
+                  {metaIntegration.metadata?.accountId || "N/A"}
+                </div>
               </div>
-              <div>
-                <div className="text-xs text-zinc-500">Currency</div>
-                <div className="text-sm text-zinc-300">{meta.currency}</div>
-              </div>
+              {metaIntegration.lastSync && (
+                <div>
+                  <div className="text-xs text-zinc-500">Last Synced</div>
+                  <div className="text-sm text-zinc-300">
+                    {new Date(metaIntegration.lastSync).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-4 text-sm text-red-400">
-              {errors.meta || "Connection failed"}
+              {metaIntegration?.status === "error" ? "Connection error" : "Not connected"}
             </div>
           )}
         </div>
