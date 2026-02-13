@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
@@ -19,7 +19,7 @@ type IntegrationsData = {
   integrations: Integration[];
 };
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<IntegrationsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -217,5 +217,13 @@ export default function IntegrationsPage() {
         </ul>
       </div>
     </div>
+  );
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <IntegrationsContent />
+    </Suspense>
   );
 }

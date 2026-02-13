@@ -30,8 +30,8 @@ export async function GET() {
     });
 
     // Calculate today's performance
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice), 0);
-    const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice), 0);
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice.toString()), 0);
+    const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice.toString()), 0);
     const revenueChange = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
     const todayOrderCount = todayOrders.length;
@@ -48,7 +48,7 @@ export async function GET() {
       },
     });
 
-    const monthlyRevenue = monthOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice), 0);
+    const monthlyRevenue = monthOrders.reduce((sum, order) => sum + parseFloat(order.totalPrice.toString()), 0);
 
     // Get top product (mock for now - would need to join with order line items)
     const topProduct = {

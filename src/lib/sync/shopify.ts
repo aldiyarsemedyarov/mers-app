@@ -51,7 +51,7 @@ export async function syncShopifyOrders(storeId: string, storeConfig?: StoreConf
     const maxPages = 10; // Limit to 10 pages for MVP
 
     while (pageCount < maxPages) {
-      const url = sinceId
+      const url: string = sinceId
         ? `/orders.json?status=any&limit=250&since_id=${sinceId}`
         : `/orders.json?status=any&limit=250`;
 
@@ -141,7 +141,7 @@ export async function syncShopifyProducts(storeId: string, storeConfig?: StoreCo
     const maxPages = 10; // Limit to 10 pages for MVP
 
     while (pageCount < maxPages) {
-      const url = sinceId
+      const url: string = sinceId
         ? `/products.json?limit=250&since_id=${sinceId}`
         : `/products.json?limit=250`;
 
