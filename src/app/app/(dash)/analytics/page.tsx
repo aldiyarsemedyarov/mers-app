@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type AnalyticsData = {
   revenue: number;
@@ -12,6 +13,7 @@ type AnalyticsData = {
 };
 
 export default function AnalyticsPage() {
+  const searchParams = useSearchParams();
   const [period, setPeriod] = useState<"7d" | "30d">("7d");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,8 +24,10 @@ export default function AnalyticsPage() {
     setError(null);
 
     const days = period === "7d" ? 7 : 30;
+    const storeId = searchParams.get("store");
+    const storeParam = storeId ? `&store=${storeId}` : "";
 
-    fetch(`/api/analytics/revenue?days=${days}`)
+    fetch(`/api/analytics/revenue?days=${days}${storeParam}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.ok) {
@@ -34,7 +38,7 @@ export default function AnalyticsPage() {
       })
       .catch(() => setError("Network error"))
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, searchParams]);
 
   if (loading && !data) {
     return (

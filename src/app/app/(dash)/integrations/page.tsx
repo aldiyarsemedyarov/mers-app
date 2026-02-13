@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 type Integration = {
@@ -19,12 +20,16 @@ type IntegrationsData = {
 };
 
 export default function IntegrationsPage() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<IntegrationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/integrations")
+    const storeId = searchParams.get("store");
+    const storeParam = storeId ? `?store=${storeId}` : "";
+    
+    fetch(`/api/integrations${storeParam}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.ok) setData(d.data);
@@ -32,7 +37,7 @@ export default function IntegrationsPage() {
       })
       .catch(() => setError("Network error"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return (

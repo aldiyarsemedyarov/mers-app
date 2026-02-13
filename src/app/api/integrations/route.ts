@@ -4,7 +4,14 @@ import { getOrCreateDevUser } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   try {
     const user = await getOrCreateDevUser();
-    const store = user.stores[0];
+    
+    const searchParams = request.nextUrl.searchParams;
+    const storeId = searchParams.get("store");
+    
+    // Find the requested store or use first active store
+    const store = storeId 
+      ? user.stores.find((s) => s.id === storeId)
+      : user.stores.find((s) => s.active) || user.stores[0];
 
     if (!store) {
       return NextResponse.json(

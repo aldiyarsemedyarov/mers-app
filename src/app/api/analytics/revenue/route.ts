@@ -5,7 +5,15 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const user = await getOrCreateDevUser();
-    const store = user.stores[0];
+    
+    const searchParams = request.nextUrl.searchParams;
+    const storeId = searchParams.get("store");
+    const days = parseInt(searchParams.get("days") || "7", 10);
+
+    // Find the requested store or use first active store
+    const store = storeId 
+      ? user.stores.find((s) => s.id === storeId)
+      : user.stores.find((s) => s.active) || user.stores[0];
 
     if (!store) {
       return NextResponse.json(
@@ -13,9 +21,6 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const searchParams = request.nextUrl.searchParams;
-    const days = parseInt(searchParams.get("days") || "7", 10);
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
