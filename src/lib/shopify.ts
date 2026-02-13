@@ -1,3 +1,5 @@
+import type { StoreConfig } from "./stores";
+
 export const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || "2025-01";
 
 function requiredEnv(name: string): string {
@@ -6,8 +8,8 @@ function requiredEnv(name: string): string {
   return v;
 }
 
-export function getShopifyAdminBaseUrl() {
-  const shop = requiredEnv("SHOPIFY_SHOP_DOMAIN");
+export function getShopifyAdminBaseUrl(storeConfig?: StoreConfig) {
+  const shop = storeConfig?.shopifyDomain || requiredEnv("SHOPIFY_SHOP_DOMAIN");
   return `https://${shop}/admin/api/${SHOPIFY_API_VERSION}`;
 }
 
@@ -23,9 +25,13 @@ export class ShopifyAPIError extends Error {
   }
 }
 
-export async function shopifyAdminFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const base = getShopifyAdminBaseUrl();
-  const token = requiredEnv("SHOPIFY_ADMIN_TOKEN");
+export async function shopifyAdminFetch<T>(
+  path: string,
+  init?: RequestInit,
+  storeConfig?: StoreConfig
+): Promise<T> {
+  const base = getShopifyAdminBaseUrl(storeConfig);
+  const token = storeConfig?.shopifyToken || requiredEnv("SHOPIFY_ADMIN_TOKEN");
 
   const res = await fetch(`${base}${path}`, {
     ...init,

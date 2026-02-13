@@ -1,3 +1,5 @@
+import type { StoreConfig } from "./stores";
+
 type Json = Record<string, any>;
 
 function requiredEnv(name: string): string {
@@ -8,13 +10,16 @@ function requiredEnv(name: string): string {
 
 export const META_API_VERSION = process.env.META_API_VERSION || "v19.0";
 
-export function getMetaAccessToken() {
+export function getMetaAccessToken(storeConfig?: StoreConfig) {
+  const token = storeConfig?.metaAccessToken || requiredEnv("META_ACCESS_TOKEN");
   // Strip optional surrounding quotes (people paste into .env with quotes sometimes)
-  return requiredEnv("META_ACCESS_TOKEN").replace(/^"|"$/g, "").trim();
+  return token.replace(/^"|"$/g, "").trim();
 }
 
-export function getMetaAdAccountId() {
-  const raw = requiredEnv("META_AD_ACCOUNT_ID").replace(/^"|"$/g, "").trim();
+export function getMetaAdAccountId(storeConfig?: StoreConfig) {
+  const raw = (storeConfig?.metaAdAccountId || requiredEnv("META_AD_ACCOUNT_ID"))
+    .replace(/^"|"$/g, "")
+    .trim();
   return raw.startsWith("act_") ? raw : `act_${raw}`;
 }
 
@@ -31,8 +36,12 @@ export class MetaAPIError extends Error {
   }
 }
 
-export async function metaFetch<T = Json>(path: string, params?: Record<string, string>) {
-  const token = getMetaAccessToken();
+export async function metaFetch<T = Json>(
+  path: string,
+  params?: Record<string, string>,
+  storeConfig?: StoreConfig
+) {
+  const token = getMetaAccessToken(storeConfig);
   const url = new URL(`https://graph.facebook.com/${META_API_VERSION}${path}`);
   url.searchParams.set("access_token", token);
   for (const [k, v] of Object.entries(params || {})) url.searchParams.set(k, v);
