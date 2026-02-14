@@ -1172,15 +1172,10 @@ select:focus {
   animation: staggerFade 0.4s ease both;
 }
 
-/* Prevent stagger flicker on inactive pages */
-.page:not(.active) .dash-card,
-.page:not(.active) .card {
-  opacity: 0;
-}
-
-.page.active .dash-card,
-.page.active .card {
-  animation: staggerFade 0.4s ease both;
+/* Next.js pages don't toggle `.active` like the static demo; never hide content by default. */
+.dash-card,
+.card {
+  opacity: 1;
 }
 
 /* ===== SETTINGS & ACCOUNT ===== */
