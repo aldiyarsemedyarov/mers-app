@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 
 interface SankeyProps {
   data: {
@@ -13,120 +13,183 @@ interface SankeyProps {
   };
 }
 
+type Node = {
+  id: string;
+  x: number;
+  y: number; // center
+  w: number;
+  h: number;
+  color: string;
+  label: string;
+};
+
+function fmtK(v: number) {
+  if (!Number.isFinite(v)) return '$0';
+  if (Math.abs(v) >= 1000) return `$${(v / 1000).toFixed(1)}K`;
+  return `$${Math.round(v)}`;
+}
+
+function ribbonPath(from: Node, to: Node, thickness: number) {
+  const x0 = from.x + from.w;
+  const x1 = to.x;
+  const y0 = from.y;
+  const y1 = to.y;
+
+  const t = Math.max(6, thickness);
+
+  const y0a = y0 - t / 2;
+  const y0b = y0 + t / 2;
+  const y1a = y1 - t / 2;
+  const y1b = y1 + t / 2;
+
+  const cpx0 = x0 + (x1 - x0) * 0.45;
+  const cpx1 = x0 + (x1 - x0) * 0.55;
+
+  return [
+    `M ${x0} ${y0a}`,
+    `C ${cpx0} ${y0a}, ${cpx1} ${y1a}, ${x1} ${y1a}`,
+    `L ${x1} ${y1b}`,
+    `C ${cpx1} ${y1b}, ${cpx0} ${y0b}, ${x0} ${y0b}`,
+    'Z',
+  ].join(' ');
+}
+
 export function SankeyDiagram({ data }: SankeyProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const vbW = 1000;
+  const vbH = 420;
 
-  useEffect(() => {
-    if (!svgRef.current) return;
+  const { nodes, flows } = useMemo(() => {
+    const revenue = Math.max(1, data.revenue);
 
-    const svg = svgRef.current;
-    const width = svg.clientWidth;
-    const height = 400;
+    // Visual scaling: keep readable even at small values
+    const maxOut = Math.max(data.adSpend, data.cogs, data.shipping, data.fees, data.netProfit, 1);
+    const scale = 260 / Math.max(revenue, maxOut * 2);
 
-    svg.innerHTML = ''; // Clear previous
-
-    const { revenue, adSpend, cogs, shipping, fees, netProfit } = data;
-
-    // Calculate flows
-    const totalOutflow = adSpend + cogs + shipping + fees;
-    const scale = (height - 100) / revenue;
-
-    // Node positions
-    const nodes = [
-      { id: 'revenue', x: 50, y: height / 2, height: revenue * scale, label: `Revenue\n$${(revenue / 1000).toFixed(1)}K`, color: '#2ed573' },
-      { id: 'adSpend', x: width * 0.4, y: 50, height: adSpend * scale, label: `Ad Spend\n$${(adSpend / 1000).toFixed(1)}K`, color: '#4da6ff' },
-      { id: 'cogs', x: width * 0.4, y: 120 + adSpend * scale, height: cogs * scale, label: `COGS\n$${(cogs / 1000).toFixed(1)}K`, color: '#ff9f43' },
-      { id: 'shipping', x: width * 0.4, y: 140 + (adSpend + cogs) * scale, height: shipping * scale, label: `Shipping\n$${(shipping / 1000).toFixed(1)}K`, color: '#ff6b9d' },
-      { id: 'fees', x: width * 0.4, y: 160 + (adSpend + cogs + shipping) * scale, height: fees * scale, label: `Fees\n$${(fees / 1000).toFixed(1)}K`, color: '#a855f7' },
-      { id: 'netProfit', x: width - 100, y: height / 2 - (netProfit * scale) / 2, height: netProfit * scale, label: `Net Profit\n$${(netProfit / 1000).toFixed(1)}K`, color: '#2ed573' },
-    ];
-
-    // Draw flows (bezier curves)
-    const drawFlow = (from: typeof nodes[0], to: typeof nodes[0], value: number, color: string) => {
-      const fromY = from.y + from.height / 2;
-      const toY = to.y + to.height / 2;
-      const flowHeight = value * scale;
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = `M ${from.x + 120} ${fromY - flowHeight / 2}
-                 C ${(from.x + to.x) / 2} ${fromY - flowHeight / 2},
-                   ${(from.x + to.x) / 2} ${toY - flowHeight / 2},
-                   ${to.x - 20} ${toY - flowHeight / 2}
-                 L ${to.x - 20} ${toY + flowHeight / 2}
-                 C ${(from.x + to.x) / 2} ${toY + flowHeight / 2},
-                   ${(from.x + to.x) / 2} ${fromY + flowHeight / 2},
-                   ${from.x + 120} ${fromY + flowHeight / 2}
-                 Z`;
-
-      path.setAttribute('d', d);
-      path.setAttribute('fill', color);
-      path.setAttribute('opacity', '0.3');
-      svg.appendChild(path);
+    const left: Node = {
+      id: 'revenue',
+      x: 60,
+      y: vbH / 2,
+      w: 120,
+      h: Math.max(120, revenue * scale),
+      color: 'var(--green)',
+      label: `Revenue\n${fmtK(data.revenue)}`,
     };
 
-    // Draw flows
-    drawFlow(nodes[0], nodes[1], adSpend, nodes[1].color);
-    drawFlow(nodes[0], nodes[2], cogs, nodes[2].color);
-    drawFlow(nodes[0], nodes[3], shipping, nodes[3].color);
-    drawFlow(nodes[0], nodes[4], fees, nodes[4].color);
+    // Right column stacked
+    const rightX = 420;
+    const rightW = 120;
+    const stackGap = 14;
 
-    // Draw net profit flow
-    const netPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const netFromY = nodes[0].y;
-    const netToY = nodes[5].y + nodes[5].height / 2;
-    const netHeight = netProfit * scale;
-    const netD = `M ${nodes[0].x + 120} ${netFromY - netHeight / 2}
-                  C ${(nodes[0].x + nodes[5].x) / 2} ${netFromY - netHeight / 2},
-                    ${(nodes[0].x + nodes[5].x) / 2} ${netToY - netHeight / 2},
-                    ${nodes[5].x - 20} ${netToY - netHeight / 2}
-                  L ${nodes[5].x - 20} ${netToY + netHeight / 2}
-                  C ${(nodes[0].x + nodes[5].x) / 2} ${netToY + netHeight / 2},
-                    ${(nodes[0].x + nodes[5].x) / 2} ${netFromY + netHeight / 2},
-                    ${nodes[0].x + 120} ${netFromY + netHeight / 2}
-                  Z`;
-    netPath.setAttribute('d', netD);
-    netPath.setAttribute('fill', nodes[5].color);
-    netPath.setAttribute('opacity', '0.3');
-    svg.appendChild(netPath);
+    const outItems = [
+      { id: 'adSpend', v: data.adSpend, color: 'var(--blue)', label: `Ad Spend\n${fmtK(data.adSpend)}` },
+      { id: 'cogs', v: data.cogs, color: 'var(--orange)', label: `COGS\n${fmtK(data.cogs)}` },
+      { id: 'shipping', v: data.shipping, color: 'var(--pink)', label: `Shipping\n${fmtK(data.shipping)}` },
+      { id: 'fees', v: data.fees, color: 'var(--accent)', label: `Fees\n${fmtK(data.fees)}` },
+    ];
 
-    // Draw nodes
-    nodes.forEach((node) => {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', node.x.toString());
-      rect.setAttribute('y', (node.y - node.height / 2).toString());
-      rect.setAttribute('width', '100');
-      rect.setAttribute('height', node.height.toString());
-      rect.setAttribute('rx', '4');
-      rect.setAttribute('fill', node.color);
-      rect.setAttribute('opacity', '0.8');
-      svg.appendChild(rect);
+    const outHeights = outItems.map((x) => Math.max(44, x.v * scale));
+    const stackTotal = outHeights.reduce((a, b) => a + b, 0) + stackGap * (outHeights.length - 1);
+    let cursor = (vbH - stackTotal) / 2;
 
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', (node.x + 50).toString());
-      text.setAttribute('y', node.y.toString());
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', '#fff');
-      text.setAttribute('font-size', '11');
-      text.setAttribute('font-weight', '600');
-      node.label.split('\n').forEach((line, i) => {
-        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-        tspan.setAttribute('x', (node.x + 50).toString());
-        tspan.setAttribute('dy', i === 0 ? '0' : '14');
-        tspan.textContent = line;
-        text.appendChild(tspan);
-      });
-      svg.appendChild(text);
+    const outNodes: Node[] = outItems.map((it, idx) => {
+      const h = outHeights[idx];
+      const node: Node = {
+        id: it.id,
+        x: rightX,
+        y: cursor + h / 2,
+        w: rightW,
+        h,
+        color: it.color,
+        label: it.label,
+      };
+      cursor += h + stackGap;
+      return node;
     });
+
+    const profit: Node = {
+      id: 'netProfit',
+      x: 780,
+      y: vbH / 2,
+      w: 140,
+      h: Math.max(70, data.netProfit * scale),
+      color: 'var(--green)',
+      label: `Net Profit\n${fmtK(data.netProfit)}`,
+    };
+
+    const byId = new Map<string, Node>([[left.id, left], [profit.id, profit], ...outNodes.map((n) => [n.id, n])]);
+
+    const flows = [
+      { from: 'revenue', to: 'adSpend', v: data.adSpend, color: 'var(--blue)' },
+      { from: 'revenue', to: 'cogs', v: data.cogs, color: 'var(--orange)' },
+      { from: 'revenue', to: 'shipping', v: data.shipping, color: 'var(--pink)' },
+      { from: 'revenue', to: 'fees', v: data.fees, color: 'var(--accent)' },
+      { from: 'revenue', to: 'netProfit', v: data.netProfit, color: 'var(--green)' },
+    ]
+      .filter((f) => f.v > 0)
+      .map((f) => ({
+        ...f,
+        fromNode: byId.get(f.from)!,
+        toNode: byId.get(f.to)!,
+        thickness: Math.max(10, f.v * scale),
+      }));
+
+    return { nodes: [left, ...outNodes, profit], flows };
   }, [data]);
 
   return (
     <svg
-      ref={svgRef}
-      style={{
-        width: '100%',
-        height: '400px',
-        background: 'transparent',
-      }}
-    />
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      width="100%"
+      height={400}
+      role="img"
+      aria-label="Cash flow Sankey diagram"
+      style={{ width: '100%', height: 400, display: 'block' }}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <defs>
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.35" />
+        </filter>
+      </defs>
+
+      {/* flows */}
+      {flows.map((f) => (
+        <path
+          key={`${f.from}-${f.to}`}
+          d={ribbonPath(f.fromNode, f.toNode, f.thickness)}
+          fill={f.color}
+          opacity={0.22}
+        />
+      ))}
+
+      {/* nodes */}
+      {nodes.map((n) => (
+        <g key={n.id} filter="url(#softShadow)">
+          <rect
+            x={n.x}
+            y={n.y - n.h / 2}
+            width={n.w}
+            height={n.h}
+            rx={10}
+            fill={n.color}
+            opacity={0.85}
+          />
+          <text
+            x={n.x + n.w / 2}
+            y={n.y - 6}
+            textAnchor="middle"
+            fill="#fff"
+            fontSize={14}
+            fontWeight={700}
+            style={{ letterSpacing: '-0.01em' }}
+          >
+            {n.label.split('\n')[0]}
+          </text>
+          <text x={n.x + n.w / 2} y={n.y + 18} textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize={12}>
+            {n.label.split('\n')[1]}
+          </text>
+        </g>
+      ))}
+    </svg>
   );
 }
