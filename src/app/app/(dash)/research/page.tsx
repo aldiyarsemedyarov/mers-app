@@ -29,7 +29,7 @@ export default function ResearchPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
         <input
           className="search-box"
           placeholder="e.g., posture corrector, LED face mask, compression socks..."
@@ -37,7 +37,10 @@ export default function ResearchPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <Button>🔍 Analyze</Button>
+        <Button disabled={!query.trim()}>🔍 Analyze</Button>
+      </div>
+      <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '20px' }}>
+        Tip: paste a product idea or niche to unlock demand + margin estimates.
       </div>
 
       <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>🔥 Trending Products This Week</h3>
