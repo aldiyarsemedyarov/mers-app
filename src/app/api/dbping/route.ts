@@ -33,7 +33,15 @@ export async function GET() {
     console.error("DBPING_ERROR", { name: err?.name, code: err?.code, message: err?.message, stack: err?.stack, hint });
 
     return NextResponse.json(
-      { ok: false, error: err?.message || String(e), name: err?.name, code: err?.code, hint },
+      {
+        ok: false,
+        error: err?.message || String(e),
+        name: err?.name,
+        code: err?.code,
+        // Include a short stack snippet to identify whether this is coming from pg vs prisma
+        stack: err?.stack ? String(err.stack).split("\n").slice(0, 8).join("\n") : undefined,
+        hint,
+      },
       { status: 500 }
     );
   }
