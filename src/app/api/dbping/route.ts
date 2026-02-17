@@ -22,7 +22,19 @@ export async function GET() {
   }
 
   try {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const raw = process.env.DATABASE_URL;
+    // Same normalization as src/lib/prisma.ts (keep dbping independent of Prisma)
+    const connectionString = (() => {
+      try {
+        const u = new URL(raw);
+        if (u.host === "db.prisma.io:5432" && u.pathname === "/postgres") u.pathname = "/";
+        return u.toString();
+      } catch {
+        return raw;
+      }
+    })();
+
+    const pool = new Pool({ connectionString });
     const r = await pool.query("select 1 as ok");
     await pool.end();
 

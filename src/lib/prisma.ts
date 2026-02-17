@@ -7,6 +7,22 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
+function normalizeConnectionString(raw: string) {
+  try {
+    const u = new URL(raw);
+
+    // Prisma Postgres (db.prisma.io) does not use a conventional database name.
+    // Using `/postgres` can trigger "Failed to identify your database" from the gateway.
+    if (u.host === "db.prisma.io:5432" && u.pathname === "/postgres") {
+      u.pathname = "/";
+    }
+
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
 function createPrismaClient() {
   // Prisma + pg adapters require Node.js runtime (not Next.js Edge).
   if (process.env.NEXT_RUNTIME === "edge") {
@@ -15,10 +31,12 @@ function createPrismaClient() {
     );
   }
 
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
+
+  const connectionString = normalizeConnectionString(raw);
 
   // Prisma Postgres requires TLS. `pg` does not reliably honor libpq's `sslmode=require`.
   // Force SSL when sslmode=require is present.
