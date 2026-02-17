@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDevUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -35,6 +34,8 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const { prisma } = await import("@/lib/prisma");
 
     const user = await getOrCreateDevUser();
     const store = user.stores[0];
