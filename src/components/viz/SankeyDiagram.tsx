@@ -116,7 +116,11 @@ export function SankeyDiagram({ data }: SankeyProps) {
       label: `Net Profit\n${fmtK(data.netProfit)}`,
     };
 
-    const byId = new Map<string, Node>([[left.id, left], [profit.id, profit], ...outNodes.map((n) => [n.id, n])]);
+    const byId = new Map<string, Node>([
+      [left.id, left] as const,
+      [profit.id, profit] as const,
+      ...outNodes.map((n) => [n.id, n] as const),
+    ]);
 
     const flows = [
       { from: 'revenue', to: 'adSpend', v: data.adSpend, color: 'var(--blue)' },

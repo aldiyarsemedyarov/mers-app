@@ -20,14 +20,22 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  // Create connection pool (reuse in non-production for hot reload)
-  const pool = globalForPrisma.pool ?? new Pool({ connectionString });
+  // Prisma Postgres requires TLS. `pg` does not reliably honor libpq's `sslmode=require`.
+  // Force SSL when sslmode=require is present.
+  const needsSsl = connectionString.includes("sslmode=require");
+  const pool =
+    globalForPrisma.pool ??
+    new Pool({
+      connectionString,
+      ...(needsSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+
   if (process.env.NODE_ENV !== "production") globalForPrisma.pool = pool;
 
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
