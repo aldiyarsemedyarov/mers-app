@@ -98,7 +98,17 @@ export async function GET() {
       },
     });
   } catch (e: unknown) {
-    const err = e as { message?: string; code?: string; name?: string };
+    const err = e as { message?: string; code?: string; name?: string; stack?: string; cause?: unknown };
+    const hint = safeDbHint();
+
+    // Log server-side details for Vercel (should not include secrets)
+    console.error("STATUS_API_ERROR", {
+      name: err?.name,
+      code: err?.code,
+      message: err?.message,
+      stack: err?.stack,
+      hint,
+    });
 
     return NextResponse.json(
       {
@@ -106,7 +116,7 @@ export async function GET() {
         error: err?.message || String(e),
         name: err?.name,
         code: err?.code,
-        hint: safeDbHint(),
+        hint,
       },
       { status: 500 }
     );
