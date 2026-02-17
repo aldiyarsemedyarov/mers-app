@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 // Verify Shopify webhook signature
 function verifyShopifyWebhook(body: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) return false;

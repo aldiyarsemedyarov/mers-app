@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { shopifyAdminFetch, type ShopifyShopResponse } from "@/lib/shopify";
 import { metaFetch, type MetaAccountResponse, getMetaAdAccountId } from "@/lib/meta";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getOrCreateDevUser();
