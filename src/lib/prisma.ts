@@ -8,6 +8,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  // Prisma + pg adapters require Node.js runtime (not Next.js Edge).
+  if (process.env.NEXT_RUNTIME === "edge") {
+    throw new Error(
+      "Prisma database client cannot run in the Edge runtime. Set `export const runtime = 'nodejs'` in any route importing prisma."
+    );
+  }
+
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");

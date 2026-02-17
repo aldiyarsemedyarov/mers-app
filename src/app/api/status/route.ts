@@ -1,9 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getOrCreateDevUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export const runtime = "nodejs";
+
+function safeDbHint() {
+  const url = process.env.DATABASE_URL;
+  if (!url) return { present: false as const };
+
+  // Don’t leak credentials: only return a minimal, non-sensitive hint.
   try {
+    const u = new URL(url);
+    return {
+      present: true as const,
+      protocol: u.protocol,
+      host: u.host,
+      pathname: u.pathname,
+      search: u.search ? "?…" : "",
+    };
+  } catch {
+    return { present: true as const, protocol: "unparseable" as const };
+  }
+}
+
+export async function GET() {
+  try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "DATABASE_URL is not set",
+          hint: safeDbHint(),
+        },
+        { status: 500 }
+      );
+    }
+
     const user = await getOrCreateDevUser();
     const store = user.stores[0];
 
@@ -64,11 +96,16 @@ export async function GET(request: NextRequest) {
         })),
       },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { message?: string; code?: string; name?: string };
+
     return NextResponse.json(
       {
         ok: false,
-        error: e?.message || String(e),
+        error: err?.message || String(e),
+        name: err?.name,
+        code: err?.code,
+        hint: safeDbHint(),
       },
       { status: 500 }
     );
